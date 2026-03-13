@@ -82,7 +82,8 @@ public class MainActivity extends AppCompatActivity {
         // 系統權限與排程部署
         createNotificationChannel();
         requestNotificationPermission();
-        scheduleBackgroundChat();
+        //scheduleBackgroundChat();
+        WorkManager.getInstance(this).cancelAllWork();
 
         // 初始渲染
         loadVisibleMessages();
