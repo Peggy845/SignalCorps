@@ -16,9 +16,17 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
 import com.peggy.virtualchat.network.GeminiEngine;
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final String CHANNEL_ID = "virtual_chat_channel";
+    private static final int PERMISSION_REQUEST_CODE = 1001;
     private RecyclerView recyclerView;
     private ChatAdapter adapter;
     private EditText editTextInput;
@@ -53,6 +61,37 @@ public class MainActivity extends AppCompatActivity {
 
         // 啟動時的初始渲染
         loadVisibleMessages();
+
+        // 建立系統層級的通知隧道
+        createNotificationChannel();
+        // 強制檢查並索取 Android 13 通知權限
+        requestNotificationPermission();
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "虛擬群組推播";
+            String description = "負責接收調查兵團與防彈少年團的突發訊息";
+            int importance = NotificationManager.IMPORTANCE_HIGH; // 強制懸浮通知與聲音
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        PERMISSION_REQUEST_CODE);
+            }
+        }
     }
 
     private void handleSendAction() {
