@@ -55,10 +55,13 @@
             android:clickable="true"/>
 
         <ImageView
+            android:id="@+id/iconSettings"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_preferences"
-            app:tint="#000000"/>
+            app:tint="#000000"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"/>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

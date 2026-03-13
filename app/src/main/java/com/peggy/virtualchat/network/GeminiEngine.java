@@ -12,9 +12,6 @@ import retrofit2.Response;
 
 public class GeminiEngine {
 
-    // 將你剛申請的 API Key 貼在引號內。嚴禁將此檔案提交至公開的 GitHub。
-    private static final String API_KEY = "AIzaSyCs_XW4gwbMnglpomzYKwAv2xu9m88wQL0";
-
     // 系統級防禦提示詞：強制鎖定 JSON 格式與角色性格
     private static final String SYSTEM_PROMPT =
             "你是一個負責調度群組對話的後台中樞。群組裡有：Peggy(真實人類，冷靜強大的 Fixer，極度需要秩序)、Erwin(艾爾文)、J-hope、Levi(里維)、Hange(漢吉)、RM(金南俊)、SUGA(閔玧其)。\n\n" +
@@ -40,7 +37,7 @@ public class GeminiEngine {
         void onFailure(String errorReason);
     }
 
-    public static void requestAiResponse(List<ChatMessage> history, GeminiCallback callback) {
+    public static void requestAiResponse(String apiKey, List<ChatMessage> history, GeminiCallback callback) {
         // 1. 組裝上下文視野
         StringBuilder promptBuilder = new StringBuilder(SYSTEM_PROMPT).append("\n\n【近期對話紀錄】\n");
         // 為了節省 Token 與控制上下文視窗，只取最後 10 筆對話
@@ -54,7 +51,7 @@ public class GeminiEngine {
         GeminiRequest request = new GeminiRequest(promptBuilder.toString());
 
         // 2. 發起非同步網路攻擊
-        RetrofitClient.getService().generateContent(API_KEY, request).enqueue(new Callback<GeminiResponse>() {
+        RetrofitClient.getService().generateContent(apiKey, request).enqueue(new Callback<GeminiResponse>() {
             @Override
             public void onResponse(Call<GeminiResponse> call, Response<GeminiResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {

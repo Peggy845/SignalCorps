@@ -18,6 +18,9 @@
         android:theme="@style/Theme.VirtualChat"
         tools:targetApi="31">
         <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ApiKeySettingsActivity"
             android:exported="false" />
         <activity
