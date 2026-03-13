@@ -70,17 +70,6 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
         databaseExecutor.execute(() -> {
             List<ApiKey> keys = apiKeyDao.getAllKeys();
 
-            // 測試用假資料生成器 (僅在資料庫全空時注入)
-            if (keys.isEmpty()) {
-                ApiKey dummy = new ApiKey();
-                dummy.keyName = "爸爸的Key (測試版面)";
-                dummy.keyString = "dummy_key_123";
-                dummy.usageCount = 8;
-                dummy.lastResetDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                apiKeyDao.insertKey(dummy);
-                keys = apiKeyDao.getAllKeys();
-            }
-
             final List<ApiKey> finalKeys = keys;
             runOnUiThread(() -> adapter.setKeys(finalKeys));
         });
@@ -100,7 +89,7 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 toggleDeleteMode(false);
                 loadApiKeys();
-                Toast.makeText(this, "已殲滅選取的彈匣", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "已刪除key", Toast.LENGTH_SHORT).show();
             });
         });
     }

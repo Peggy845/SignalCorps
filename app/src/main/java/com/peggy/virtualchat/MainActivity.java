@@ -143,12 +143,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showCallDialog() {
-        String[] targets = {"Erwin", "Levi", "Hange", "RM", "SUGA", "J-hope"};
+        String[] targets = {"艾爾文", "里維"};
         new AlertDialog.Builder(this)
-                .setTitle("指定呼叫目標")
+                .setTitle("Tag")
                 .setItems(targets, (dialog, which) -> {
                     String targetName = targets[which];
-                    String callCmd = "呼叫 " + targetName;
+                    String callCmd = "Tag " + targetName;
                     sendMessageAndTriggerAi(callCmd);
                 })
                 .show();
@@ -234,14 +234,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void showClearChatDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("物理清除警告")
-                .setMessage("確定要殲滅所有對話紀錄？此操作將重置 AI 的上下文記憶。")
-                .setPositiveButton("強制清除", (dialog, which) -> {
+                .setTitle("清除紀錄警告")
+                .setMessage("確定要清空所有對話紀錄？此操作將重置 AI 的上下文記憶。")
+                .setPositiveButton("清除", (dialog, which) -> {
                     databaseWriteExecutor.execute(() -> {
                         chatDao.deleteAllMessages();
                         runOnUiThread(() -> {
                             adapter.setMessages(new java.util.ArrayList<>());
-                            Toast.makeText(MainActivity.this, "物理秩序已重置", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "對話已清除", Toast.LENGTH_SHORT).show();
                         });
                     });
                 })
