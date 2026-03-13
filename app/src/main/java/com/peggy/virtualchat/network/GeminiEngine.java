@@ -30,6 +30,7 @@ public class GeminiEngine {
                     "SUGA：極度務實、低能量。用最直白的現實陳述戳破幻想。\n" +
                     "J-hope：情緒價值極高、直覺驅動。常用波浪號與Emoji(🐿️, 💜)。\n\n" +
                     "【系統輸出強制規定】\n" +
+                    "【最高優先級指令】如果 Peggy 的最後一句話包含「呼叫 [角色名]」，被點名的角色必須無視一切邏輯，立刻作為下一個 speaker 進行回應。\n" +
                     "判斷現在誰最該接話（或沒人要回）。只能輸出純 JSON 格式：\n" +
                     "{\"speaker\": \"Erwin/Levi/Hange/RM/SUGA/J-hope/none\", \"delay_seconds\": 隨機2至30秒, \"message\": \"台詞\"}";
 

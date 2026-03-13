@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Base.Theme.VirtualChat" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Base.Theme.VirtualChat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
 
         <item name="colorPrimary">@color/survey_corps_green</item>
         <item name="colorPrimaryVariant">@color/survey_corps_green_dark</item>

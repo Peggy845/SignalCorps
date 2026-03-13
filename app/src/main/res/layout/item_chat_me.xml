@@ -26,14 +26,28 @@
             android:textSize="16sp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/textTimestampMe"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_marginEnd="4dp"
-        android:textColor="#999999"
-        android:textSize="11sp"
+        android:gravity="end"
         app:layout_constraintBottom_toBottomOf="@id/layoutBubbleMe"
-        app:layout_constraintEnd_toStartOf="@id/layoutBubbleMe" />
+        app:layout_constraintEnd_toStartOf="@id/layoutBubbleMe">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="已讀"
+            android:textColor="#999999"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/textTimestampMe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#999999"
+            android:textSize="11sp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
