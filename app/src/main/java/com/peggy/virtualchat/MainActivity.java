@@ -12,6 +12,10 @@ import com.peggy.virtualchat.database.ChatMessageDao;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
+import com.peggy.virtualchat.network.GeminiEngine;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -53,28 +57,69 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleSendAction() {
         String content = editTextInput.getText().toString().trim();
-        if (content.isEmpty()) {
-            return;
-        }
+        if (content.isEmpty()) return;
 
-        // 立即清空輸入框，防止高頻率連點造成的資料庫髒寫入
         editTextInput.setText("");
 
-        // 將耗時的 Insert 操作丟入背景執行緒
+        // 1. 將 Peggy 的發言寫入本地資料庫
         databaseWriteExecutor.execute(() -> {
             ChatMessage newMessage = new ChatMessage();
             newMessage.speakerName = "Peggy";
             newMessage.messageContent = content;
             newMessage.createdTimestamp = System.currentTimeMillis();
             newMessage.isPending = false;
-
             chatDao.insertMessage(newMessage);
 
-            // 寫入完成，確保資料庫已是最新狀態，切回主執行緒觸發 UI 重繪
-            runOnUiThread(this::loadVisibleMessages);
+            runOnUiThread(() -> {
+                loadVisibleMessages();
+                // 2. 觸發 AI 引擎，將歷史對話送出
+                triggerAiResponse();
+            });
         });
     }
 
+    private void triggerAiResponse() {
+        // 在背景撈取近期對話，避免阻塞 UI
+        databaseWriteExecutor.execute(() -> {
+            List<ChatMessage> history = chatDao.getAllVisibleMessages();
+
+            // 呼叫 Gemini 引擎
+            GeminiEngine.requestAiResponse(history, new GeminiEngine.GeminiCallback() {
+                @Override
+                public void onSuccess(String speaker, int delaySeconds, String message) {
+                    if ("none".equalsIgnoreCase(speaker)) {
+                        return; // AI 判定目前無人回應，維持死寂
+                    }
+                    scheduleAiMessage(speaker, message, delaySeconds);
+                }
+
+                @Override
+                public void onFailure(String errorReason) {
+                    // 防禦攔截：在 UI 提示錯誤，避免陷入無止盡的等待
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "連線破裂: " + errorReason, Toast.LENGTH_LONG).show());
+                }
+            });
+        });
+    }
+    private void scheduleAiMessage(String speaker, String messageContent, int delaySeconds) {
+        // 建立精準的物理延遲
+        long delayMillis = delaySeconds * 1000L;
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            // 時間到達，將 AI 的回覆正式寫入資料庫
+            databaseWriteExecutor.execute(() -> {
+                ChatMessage aiMessage = new ChatMessage();
+                aiMessage.speakerName = speaker;
+                aiMessage.messageContent = messageContent;
+                aiMessage.createdTimestamp = System.currentTimeMillis();
+                aiMessage.isPending = false;
+                chatDao.insertMessage(aiMessage);
+
+                // 強制重繪 UI
+                runOnUiThread(this::loadVisibleMessages);
+            });
+        }, delayMillis);
+    }
     private void loadVisibleMessages() {
         // 讀取操作同樣必須在背景執行
         databaseWriteExecutor.execute(() -> {
