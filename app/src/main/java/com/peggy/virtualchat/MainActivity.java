@@ -11,6 +11,7 @@ import android.os.Looper;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -61,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
         editTextInput = findViewById(R.id.editTextMessage);
         buttonSend = findViewById(R.id.buttonSend);
         buttonCall = findViewById(R.id.buttonCall);
+        ImageView iconClearChat = findViewById(R.id.iconClearChat);
+        iconClearChat.setOnClickListener(v -> showClearChatDialog());
 
         // 佈局 RecyclerView 物理秩序
         adapter = new ChatAdapter();
@@ -103,6 +106,27 @@ public class MainActivity extends AppCompatActivity {
         sendMessageAndTriggerAi(content);
     }
 
+    private void showClearChatDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("物理清除警告")
+                .setMessage("確定要殲滅所有對話紀錄？此操作將重置 AI 的上下文記憶，且無法復原。")
+                .setPositiveButton("強制清除", (dialog, which) -> purgeDatabase())
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void purgeDatabase() {
+        // 將高耗能的 Delete 操作丟入背景執行緒
+        databaseWriteExecutor.execute(() -> {
+            chatDao.deleteAllMessages();
+
+            // 資料庫清空後，切回主執行緒將 UI 歸零
+            runOnUiThread(() -> {
+                adapter.setMessages(new java.util.ArrayList<>()); // 灌入空陣列
+                Toast.makeText(this, "物理秩序已重置", Toast.LENGTH_SHORT).show();
+            });
+        });
+    }
     private void showCallDialog() {
         String[] targets = {"Erwin", "Levi", "Hange", "RM", "SUGA", "J-hope"};
         new AlertDialog.Builder(this)

@@ -21,4 +21,7 @@ public interface ChatMessageDao {
 
     @Update
     void updateMessage(ChatMessage message);
+
+    @Query("DELETE FROM chat_message")
+    void deleteAllMessages();
 }
