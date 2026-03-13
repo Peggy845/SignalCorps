@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -32,6 +33,16 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
         this.selectedKeys.clear();
         notifyDataSetChanged();
     }
+    // 擴建介面
+    public interface OnKeyActionListener {
+        void onExhaustClick(ApiKey apiKey);
+    }
+
+    private OnKeyActionListener actionListener;
+
+    public void setOnKeyActionListener(OnKeyActionListener listener) {
+        this.actionListener = listener;
+    }
 
     public Set<ApiKey> getSelectedKeys() {
         return selectedKeys;
@@ -50,6 +61,16 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
         holder.textKeyName.setText(apiKey.keyName);
         holder.progressUsage.setProgress(apiKey.usageCount);
         holder.textUsageCount.setText(apiKey.usageCount + "/20");
+
+        // 如果已經耗盡 (>=20)，隱藏跳過按鈕
+        holder.buttonExhaust.setVisibility(apiKey.usageCount >= 20 ? View.INVISIBLE : View.VISIBLE);
+
+        // 綁定耗盡事件
+        holder.buttonExhaust.setOnClickListener(v -> {
+            if (actionListener != null) {
+                actionListener.onExhaustClick(apiKey);
+            }
+        });
 
         // 控制 CheckBox 顯示與邏輯
         holder.checkboxDelete.setVisibility(isDeleteMode ? View.VISIBLE : View.GONE);
@@ -76,6 +97,7 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
         ProgressBar progressUsage;
         TextView textUsageCount;
         CheckBox checkboxDelete;
+        ImageButton buttonExhaust;
 
         KeyViewHolder(View itemView) {
             super(itemView);
@@ -83,6 +105,7 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
             progressUsage = itemView.findViewById(R.id.progressUsage);
             textUsageCount = itemView.findViewById(R.id.textUsageCount);
             checkboxDelete = itemView.findViewById(R.id.checkboxDelete);
+            buttonExhaust = itemView.findViewById(R.id.buttonExhaustKey);
         }
     }
 }

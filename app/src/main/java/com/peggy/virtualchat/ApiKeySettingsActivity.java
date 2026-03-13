@@ -43,6 +43,8 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
         btnCancelDelete = findViewById(R.id.btnCancelDelete);
 
         adapter = new ApiKeyAdapter();
+        // 植入耗盡邏輯：點擊後強制將該 Key 設為 20
+        adapter.setOnKeyActionListener(apiKey -> forceExhaustKey(apiKey));
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
@@ -131,5 +133,20 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         databaseExecutor.shutdown();
+    }
+
+    private void forceExhaustKey(ApiKey apiKey) {
+        new AlertDialog.Builder(this)
+                .setTitle("強制棄用警告")
+                .setMessage("確定要將「" + apiKey.keyName + "」標記為耗盡？系統將自動切換至下一把鑰匙")
+                .setPositiveButton("標記耗盡", (dialog, which) -> {
+                    databaseExecutor.execute(() -> {
+                        apiKey.usageCount = 20; // 強制推滿
+                        apiKeyDao.updateKey(apiKey);
+                        loadApiKeys(); // 重整畫面
+                    });
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 }
