@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.peggy.virtualchat.database.ApiKey;
 import com.peggy.virtualchat.database.ApiKeyDao;
 import com.peggy.virtualchat.database.AppDatabase;
@@ -18,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,6 +27,8 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
     private ApiKeyDao apiKeyDao;
     private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
 
+    private Button btnAddKey, btnEnterDeleteMode, btnConfirmDelete, btnCancelDelete;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,46 +36,89 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
 
         apiKeyDao = AppDatabase.getDatabase(this).apiKeyDao();
 
-        // 綁定 UI 實體
         RecyclerView recyclerView = findViewById(R.id.recyclerViewApiKeys);
-        Button buttonAdd = findViewById(R.id.buttonAddKey);
-        SwitchMaterial switchAutoRotate = findViewById(R.id.switchAutoRotate); // 未來 V2 版會用到
+        btnAddKey = findViewById(R.id.btnAddKey);
+        btnEnterDeleteMode = findViewById(R.id.btnEnterDeleteMode);
+        btnConfirmDelete = findViewById(R.id.btnConfirmDelete);
+        btnCancelDelete = findViewById(R.id.btnCancelDelete);
 
-        // 設定 RecyclerView
-        adapter = new ApiKeyAdapter(this::deleteApiKey);
+        adapter = new ApiKeyAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        // 綁定新增按鈕
-        buttonAdd.setOnClickListener(v -> showAddKeyDialog());
+        // --- 按鈕行為綁定 ---
+        btnAddKey.setOnClickListener(v -> showAddKeyDialog());
 
-        // 初始載入彈匣
+        btnEnterDeleteMode.setOnClickListener(v -> toggleDeleteMode(true));
+        btnCancelDelete.setOnClickListener(v -> toggleDeleteMode(false));
+
+        btnConfirmDelete.setOnClickListener(v -> executeBatchDelete());
+
         loadApiKeys();
+    }
+
+    private void toggleDeleteMode(boolean enter) {
+        adapter.setDeleteMode(enter);
+        // UI 狀態機切換
+        btnAddKey.setVisibility(enter ? View.GONE : View.VISIBLE);
+        btnEnterDeleteMode.setVisibility(enter ? View.GONE : View.VISIBLE);
+        btnConfirmDelete.setVisibility(enter ? View.VISIBLE : View.GONE);
+        btnCancelDelete.setVisibility(enter ? View.VISIBLE : View.GONE);
     }
 
     private void loadApiKeys() {
         databaseExecutor.execute(() -> {
             List<ApiKey> keys = apiKeyDao.getAllKeys();
-            runOnUiThread(() -> adapter.setKeys(keys));
+
+            // 測試用假資料生成器 (僅在資料庫全空時注入)
+            if (keys.isEmpty()) {
+                ApiKey dummy = new ApiKey();
+                dummy.keyName = "爸爸的Key (測試版面)";
+                dummy.keyString = "dummy_key_123";
+                dummy.usageCount = 8;
+                dummy.lastResetDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                apiKeyDao.insertKey(dummy);
+                keys = apiKeyDao.getAllKeys();
+            }
+
+            final List<ApiKey> finalKeys = keys;
+            runOnUiThread(() -> adapter.setKeys(finalKeys));
+        });
+    }
+
+    private void executeBatchDelete() {
+        Set<ApiKey> targets = adapter.getSelectedKeys();
+        if (targets.isEmpty()) {
+            toggleDeleteMode(false);
+            return;
+        }
+
+        databaseExecutor.execute(() -> {
+            for (ApiKey key : targets) {
+                apiKeyDao.deleteKey(key);
+            }
+            runOnUiThread(() -> {
+                toggleDeleteMode(false);
+                loadApiKeys();
+                Toast.makeText(this, "已殲滅選取的彈匣", Toast.LENGTH_SHORT).show();
+            });
         });
     }
 
     private void showAddKeyDialog() {
-        // 建立輸入表單的實體
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_api_key, null);
         EditText editName = view.findViewById(R.id.editKeyName);
         EditText editKey = view.findViewById(R.id.editKeyString);
 
         new AlertDialog.Builder(this)
-                .setTitle("新增戰備 API Key")
+                .setTitle("新增 API Key")
+                .setMessage("請至 Google AI Studio 申請免費 API Key")
                 .setView(view)
                 .setPositiveButton("新增", (dialog, which) -> {
                     String name = editName.getText().toString().trim();
                     String key = editKey.getText().toString().trim();
                     if (!name.isEmpty() && !key.isEmpty()) {
                         insertApiKey(name, key);
-                    } else {
-                        Toast.makeText(this, "名稱與 Key 不可為空", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .setNegativeButton("取消", null)
@@ -89,13 +134,6 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
             newKey.lastResetDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
             apiKeyDao.insertKey(newKey);
-            loadApiKeys(); // 重新整理畫面
-        });
-    }
-
-    private void deleteApiKey(ApiKey apiKey) {
-        databaseExecutor.execute(() -> {
-            apiKeyDao.deleteKey(apiKey);
             loadApiKeys();
         });
     }
