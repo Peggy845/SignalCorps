@@ -35,8 +35,10 @@ public class AiChatWorker extends Worker {
     private ApiKey getAvailableKeyAndUpdateReset(ApiKeyDao apiKeyDao) {
         List<ApiKey> allKeys = apiKeyDao.getAllKeys();
         ApiKey validKey = null;
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-
+        // 強制鎖定太平洋時區 (America/Los_Angeles)，與 Google 伺服器同生共死
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("America/Los_Angeles"));
+        String today = sdf.format(new Date());
         for (ApiKey key : allKeys) {
             if (!today.equals(key.lastResetDate)) {
                 key.usageCount = 0;
