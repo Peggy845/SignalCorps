@@ -82,7 +82,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         switch (speaker.toLowerCase()) {
             case "erwin": return R.drawable.avatar_erwin;
-            case "levi": return R.drawable.avatar_levi;
+            case "  levi": return R.drawable.avatar_levi;
             case "hange": return R.drawable.avatar_hange;
             case "rm": return R.drawable.avatar_rm;
             case "suga": return R.drawable.avatar_suga;

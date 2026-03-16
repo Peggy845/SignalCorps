@@ -122,7 +122,11 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
             newKey.keyName = name;
             newKey.keyString = keyString;
             newKey.usageCount = 0;
-            newKey.lastResetDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+            // 【防禦修正】將新增 Key 的時間戳記，強制對齊 Google 伺服器的太平洋時區
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("America/Los_Angeles"));
+            newKey.lastResetDate = sdf.format(new java.util.Date());
 
             apiKeyDao.insertKey(newKey);
             loadApiKeys();

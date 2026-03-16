@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showCallDialog() {
-        String[] targets = {"艾爾文", "里維"};
+        String[] targets = {"艾爾文", "里維", "J-hope"};
         new AlertDialog.Builder(this)
                 .setTitle("Tag")
                 .setItems(targets, (dialog, which) -> {
