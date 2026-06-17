@@ -1,5 +1,6 @@
 package com.peggy.virtualchat;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,29 +20,28 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
 
     private List<ApiKey> keyList = new ArrayList<>();
     private boolean isDeleteMode = false;
-    // 記錄被勾選的彈匣
     private final Set<ApiKey> selectedKeys = new HashSet<>();
 
-    public void setKeys(List<ApiKey> keys) {
-        this.keyList = keys;
-        notifyDataSetChanged();
-    }
-
-    // 切換模式並清空勾選狀態
-    public void setDeleteMode(boolean isDeleteMode) {
-        this.isDeleteMode = isDeleteMode;
-        this.selectedKeys.clear();
-        notifyDataSetChanged();
-    }
-    // 擴建介面
+    // 擴建雙態行為介面
     public interface OnKeyActionListener {
-        void onExhaustClick(ApiKey apiKey);
+        void onKeyActionClick(ApiKey apiKey);
     }
 
     private OnKeyActionListener actionListener;
 
     public void setOnKeyActionListener(OnKeyActionListener listener) {
         this.actionListener = listener;
+    }
+
+    public void setKeys(List<ApiKey> keys) {
+        this.keyList = keys;
+        notifyDataSetChanged();
+    }
+
+    public void setDeleteMode(boolean isDeleteMode) {
+        this.isDeleteMode = isDeleteMode;
+        this.selectedKeys.clear();
+        notifyDataSetChanged();
     }
 
     public Set<ApiKey> getSelectedKeys() {
@@ -62,28 +62,31 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
         holder.progressUsage.setProgress(apiKey.usageCount);
         holder.textUsageCount.setText(apiKey.usageCount + "/20");
 
-        // 如果已經耗盡 (>=20)，隱藏跳過按鈕
-        holder.buttonExhaust.setVisibility(apiKey.usageCount >= 20 ? View.INVISIBLE : View.VISIBLE);
+        // 雙態閥門邏輯
+        holder.buttonAction.setVisibility(View.VISIBLE);
+        if (apiKey.usageCount >= 20) {
+            // 耗盡狀態：顯示「重新裝填 (輪迴)」圖示，染成兵團綠
+            holder.buttonAction.setImageResource(android.R.drawable.ic_popup_sync);
+            holder.buttonAction.setColorFilter(Color.parseColor("#2A4B3C"));
+        } else {
+            // 正常狀態：顯示「快轉跳過」圖示，染成灰色
+            holder.buttonAction.setImageResource(android.R.drawable.ic_media_next);
+            holder.buttonAction.setColorFilter(Color.parseColor("#888888"));
+        }
 
-        // 綁定耗盡事件
-        holder.buttonExhaust.setOnClickListener(v -> {
+        // 綁定點擊事件，將判斷權交給 Activity
+        holder.buttonAction.setOnClickListener(v -> {
             if (actionListener != null) {
-                actionListener.onExhaustClick(apiKey);
+                actionListener.onKeyActionClick(apiKey);
             }
         });
 
-        // 控制 CheckBox 顯示與邏輯
         holder.checkboxDelete.setVisibility(isDeleteMode ? View.VISIBLE : View.GONE);
-        // 防止 RecyclerView 複用造成的勾選錯亂
         holder.checkboxDelete.setOnCheckedChangeListener(null);
         holder.checkboxDelete.setChecked(selectedKeys.contains(apiKey));
-
         holder.checkboxDelete.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                selectedKeys.add(apiKey);
-            } else {
-                selectedKeys.remove(apiKey);
-            }
+            if (isChecked) selectedKeys.add(apiKey);
+            else selectedKeys.remove(apiKey);
         });
     }
 
@@ -97,7 +100,7 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
         ProgressBar progressUsage;
         TextView textUsageCount;
         CheckBox checkboxDelete;
-        ImageButton buttonExhaust;
+        ImageButton buttonAction;
 
         KeyViewHolder(View itemView) {
             super(itemView);
@@ -105,7 +108,8 @@ public class ApiKeyAdapter extends RecyclerView.Adapter<ApiKeyAdapter.KeyViewHol
             progressUsage = itemView.findViewById(R.id.progressUsage);
             textUsageCount = itemView.findViewById(R.id.textUsageCount);
             checkboxDelete = itemView.findViewById(R.id.checkboxDelete);
-            buttonExhaust = itemView.findViewById(R.id.buttonExhaustKey);
+            // 沿用 XML 中原本的 id: buttonExhaustKey
+            buttonAction = itemView.findViewById(R.id.buttonExhaustKey);
         }
     }
 }

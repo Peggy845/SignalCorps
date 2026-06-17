@@ -43,8 +43,8 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
         btnCancelDelete = findViewById(R.id.btnCancelDelete);
 
         adapter = new ApiKeyAdapter();
-        // 植入耗盡邏輯：點擊後強制將該 Key 設為 20
-        adapter.setOnKeyActionListener(apiKey -> forceExhaustKey(apiKey));
+        // 將判斷邏輯接入雙態閥門
+        adapter.setOnKeyActionListener(apiKey -> handleKeyAction(apiKey));
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
@@ -58,7 +58,35 @@ public class ApiKeySettingsActivity extends AppCompatActivity {
 
         loadApiKeys();
     }
-
+    private void handleKeyAction(ApiKey apiKey) {
+        if (apiKey.usageCount < 20) {
+            new AlertDialog.Builder(this)
+                    .setTitle("強制棄用警告")
+                    .setMessage("確定要將「" + apiKey.keyName + "」標記為耗盡？系統將自動跳過此彈匣。")
+                    .setPositiveButton("標記耗盡", (dialog, which) -> {
+                        databaseExecutor.execute(() -> {
+                            apiKey.usageCount = 20;
+                            apiKeyDao.updateKey(apiKey);
+                            loadApiKeys();
+                        });
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setTitle("重新裝填 (手動輪迴)")
+                    .setMessage("確定要將「" + apiKey.keyName + "」的使用次數歸零？它將重新回到首位待命。")
+                    .setPositiveButton("強制歸零", (dialog, which) -> {
+                        databaseExecutor.execute(() -> {
+                            apiKey.usageCount = 0;
+                            apiKeyDao.updateKey(apiKey);
+                            loadApiKeys();
+                        });
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        }
+    }
     private void toggleDeleteMode(boolean enter) {
         adapter.setDeleteMode(enter);
         // UI 狀態機切換
